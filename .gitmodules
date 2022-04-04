@@ -1,0 +1,3 @@
+[submodule "GanTTY"]
+	path = GanTTY
+	url = https://github.com/timeopochin/GanTTY
