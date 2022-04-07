@@ -1,0 +1,2 @@
+INSERT INTO JOB_TYPE('Individual assignment' 'normal homework'
+        )

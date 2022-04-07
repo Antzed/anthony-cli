@@ -10,6 +10,7 @@ import (
   "strings"
   "github.com/yuin/gopher-lua"
   "io/ioutil"
+  "errors"
 )
 
 func main() {
@@ -35,11 +36,18 @@ func main() {
         },
       },
       {
-        Name:    "complete",
-        Aliases: []string{"c"},
-        Usage:   "complete a task on the list",
+        Name:    "initialize",
+        Aliases: []string{"init"},
+        Usage:   "initilize enviroment",
         Action:  func(c *cli.Context) error {
-          return nil
+            cmd := exec.Command("npm", "install", "--global","taskbook")
+            out, err := cmd.Output()
+            //err := cmd.Run()
+            if err != nil{
+                panic(err)
+            }
+            fmt.Printf(string(out))
+            return nil
         },
       },
 	
@@ -97,6 +105,13 @@ func main() {
                 Name: "project",
                 Usage: "add a new project with gantt chart",
                 Action: func(c *cli.Context) error {
+                    path := "projects"
+                	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		                err := os.Mkdir(path, os.ModePerm)
+		                if err != nil {
+			                log.Println(err)
+		                }
+	                }
                     var input string = c.Args().First()
                     L := lua.NewState()
                     defer L.Close()
@@ -134,6 +149,25 @@ func main() {
                     for _, f := range files {
                         fmt.Println(f.Name())
                     }            
+                    return nil
+                },
+            },
+            {
+                Name: "task",
+                Usage: "list all task",
+                Action: func(c *cli.Context) error{
+                    L := lua.NewState()
+                    defer L.Close()
+                    if err := L.DoFile("luaScript.lua"); err != nil{
+                        panic(err)
+                    }
+                    if err := L.CallByParam(lua.P{
+                        Fn:      L.GetGlobal("showTask"), // name of Lua function
+                        NRet:    0,                     // number of returned values
+                        Protect: true,                  // return err or panic
+                    }); err != nil {
+                        panic(err)
+                    }
                     return nil
                 },
             },
