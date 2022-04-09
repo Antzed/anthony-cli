@@ -11,10 +11,13 @@ import (
   "github.com/yuin/gopher-lua"
   "io/ioutil"
   "errors"
+  //"database/sql"
+  //_"github.com/mattn/go-sqlite3"
 )
 
 func main() {
   var board string
+  var isJob bool
   app := &cli.App{
     Name: "anthony",
     Usage: "anthony's linux automation",
@@ -67,10 +70,25 @@ func main() {
                         Usage: "add a new task to a specific board",
                         Destination: &board,
                     },
+                    &cli.BoolFlag{
+                        Name: "job",
+                        Value: false,
+                        Usage: "want to urn it to job and store in databse",
+                        Destination: &isJob,
+                    },
                 },
                 Action: func(c *cli.Context) error {
                     var input string = c.Args().First()
                     inputsplit := strings.Split(input, " and ")
+                    if isJob == true {
+                        //db, err := sql.Open("sqlite3", "./job.db")
+                        //checkErr(err)
+                        fmt.Println("opened database")
+                        //db.Close()
+                        //fmt.Println("and then the database closed")
+                    } else {
+                        fmt.Println("else")
+                    }
                     if board != "My Board" {
                         
                         fmt.Println("added task: ", c.Args().First(), " at board: ", board)
@@ -80,9 +98,7 @@ func main() {
                             cmd := exec.Command("tb", "-t", atboard, s)
                             err := cmd.Run()
 
-                            if err != nil {
-                                log.Fatal(err)
-                            }
+                            checkErr(err)
                             fmt.Println("done")
                         }
                     } else {
@@ -91,13 +107,13 @@ func main() {
                             cmd := exec.Command("tb", "-t" ,s)
                             err := cmd.Run()
 
-                            if err != nil {
-                                log.Fatal(err)
-                            }
+                            checkErr(err)
                             fmt.Println("done1")
                             
                         }
                     }
+                    //db.Close()
+                    fmt.Println("database closed")
                     return nil
                 },
             },
@@ -115,9 +131,8 @@ func main() {
                     var input string = c.Args().First()
                     L := lua.NewState()
                     defer L.Close()
-                    if err := L.DoFile("luaScript.lua"); err != nil{
-                        panic(err)
-                    }
+                    err := L.DoFile("luaScript.lua")
+                    checkErr(err)
                     if err := L.CallByParam(lua.P{
 		                Fn:      L.GetGlobal("addProject"), // name of Lua function
 		                NRet:    0,                     // number of returned values
@@ -158,9 +173,11 @@ func main() {
                 Action: func(c *cli.Context) error{
                     L := lua.NewState()
                     defer L.Close()
-                    if err := L.DoFile("luaScript.lua"); err != nil{
-                        panic(err)
-                    }
+                    err := L.DoFile("luaScript.lua")
+                    checkErr(err)
+                    //err != nil{
+                        //panic(err)
+                    //}
                     if err := L.CallByParam(lua.P{
                         Fn:      L.GetGlobal("showTask"), // name of Lua function
                         NRet:    0,                     // number of returned values
@@ -168,6 +185,23 @@ func main() {
                     }); err != nil {
                         panic(err)
                     }
+                    return nil
+                },
+            },
+        },
+      },
+      {
+        Name: "delete",
+        Usage: "delete things",
+        Subcommands: []*cli.Command{
+            {
+                Name: "project",
+                Usage: "delete existing projects",
+                Action: func(c *cli.Context) error{
+                    var input string = "./projects/" + c.Args().First()
+                    err := os.Remove(input)
+                    checkErr(err)
+                    fmt.Println("deleted project", c.Args().First())
                     return nil
                 },
             },
@@ -193,4 +227,10 @@ func main() {
   if err != nil {
     log.Fatal(err)
   }
+}
+
+func checkErr(err error) {
+    if err != nil {
+        panic(err)
+    }
 }
