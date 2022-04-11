@@ -3,10 +3,10 @@ package task_handle
 import (
     "fmt"
     "os/exec"
-    "github.com/Antzed/anthony-cli/error_handle"
+    er "github.com/Antzed/anthony-cli/error_handle"
 )
 
-func addTask(inputsplit []string, board string){
+func AddTask(inputsplit []string, board string){
      if board != "My Board" {
          var atboard string = "@" + board
          for _, s := range inputsplit {
@@ -14,7 +14,7 @@ func addTask(inputsplit []string, board string){
              cmd := exec.Command("tb", "-t", atboard, s)
              err := cmd.Run()
 
-             error_handle.checkErr(err)
+             er.CheckErr(err)
              fmt.Println("done")
          }
      } else {
@@ -23,7 +23,7 @@ func addTask(inputsplit []string, board string){
              cmd := exec.Command("tb", "-t" ,s)
              err := cmd.Run()
 
-             checkErr(err)
+             er.CheckErr(err)
              fmt.Println("done1")
 
          }

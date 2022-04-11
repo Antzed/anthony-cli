@@ -6,8 +6,10 @@ import (
   "log"
   "os"
   "os/exec"
-  "github.com/Antzed/anthony-cli/error-handle"
-  "github.com/Antzed/anthony-cli/task_handle"
+  _"embed"
+  er "github.com/Antzed/anthony-cli/error_handle"
+  th "github.com/Antzed/anthony-cli/task_handle"
+  "github.com/Antzed/anthony-cli/db_handle"
   "github.com/urfave/cli/v2"
   "strings"
   "github.com/yuin/gopher-lua"
@@ -19,7 +21,25 @@ import (
   "github.com/qeesung/image2ascii/convert"
   _ "image/jpeg"
   _ "image/png"
+  "image"
+  "bytes"
 )
+
+
+//go:embed aileen.jpg
+var loveimage []byte
+
+
+var luaScript = `
+ function addProject(name)
+   os.execute("python3 ./GanTTY/main.py ./projects" .. name)
+ end
+
+ function showTask()
+     os.execute("tb")
+ end
+`
+
 
 func main() {
   var board string
@@ -80,7 +100,7 @@ func main() {
                 Action: func(c *cli.Context) error {
                     var input string = c.Args().First()
                     inputsplit := strings.Split(input, " and ")
-                    task.addaTask(inputsplit, board)
+                    th.AddTask(inputsplit, board)
                     return nil
                 },
             },
@@ -101,24 +121,24 @@ func main() {
                  },
                  Action: func(c *cli.Context) error {
                     db, err := sql.Open("sqlite3", "./job.db")
-                    checkErr(err)
+                    er.CheckErr(err)
                     fmt.Println("opened database")
-                    checkErr(err)
-                    var queryJobTypeID = "SELECT JobTypeID FROM JOB_TYPE WHERE JobTypeName = '" + c.String("type") + "'"
-                    rows, err := db.Query(queryJobTypeID)
-                    checkErr(err)
-                    var jid int
+                    //er.CheckErr(err)
+                    //var queryJobTypeID = "SELECT JobTypeID FROM JOB_TYPE WHERE JobTypeName = '" + c.String("type") + "'"
+                    //rows, err := db.Query(queryJobTypeID)
+                    //er.CheckErr(err)
+                    var jid = db_handle.SelectForeignKey(db, c.String("type"))
 
-                    for rows.Next() {
-                        err = rows.Scan(&jid)
-                        checkErr(err)
-                    }
+                    //for rows.Next() {
+                      //  err = rows.Scan(&jid)
+                        //er.CheckErr(err)
+                    //}
                     stmt, err := db.Prepare("INSERT INTO JOB(JobName, JobTypeID, DueDate) values(?,?,?)")
-                    checkErr(err)
+                    er.CheckErr(err)
                     res, err := stmt.Exec(c.Args().First(), jid, c.String("due"))
-                    checkErr(err)
+                    er.CheckErr(err)
                     id, err := res.LastInsertId()
-                    checkErr(err)
+                    er.CheckErr(err)
                     fmt.Println(id)
                     db.Close()
                     fmt.Println("database closed")
@@ -139,8 +159,11 @@ func main() {
                     var input string = c.Args().First()
                     L := lua.NewState()
                     defer L.Close()
-                    err := L.DoFile("luaScript.lua")
-                    checkErr(err)
+
+                    if err := L.DoString(luaScript); err != nil{
+                        panic(err)
+                    }
+
                     if err := L.CallByParam(lua.P{
 		                Fn:      L.GetGlobal("addProject"), // name of Lua function
 		                NRet:    0,                     // number of returned values
@@ -181,8 +204,8 @@ func main() {
                 Action: func(c *cli.Context) error{
                     L := lua.NewState()
                     defer L.Close()
-                    err := L.DoFile("luaScript.lua")
-                    checkErr(err)
+                    err := L.DoString(luaScript)
+                    er.CheckErr(err)
                     //err != nil{
                         //panic(err)
                     //}
@@ -201,22 +224,23 @@ func main() {
                 Usage: "show all the jobs",
                 Action: func(c *cli.Context) error{
                     db, err := sql.Open("sqlite3", "./job.db")
-                    checkErr(err)
+                    er.CheckErr(err)
                     fmt.Println("opened database")
                     rows, err := db.Query("SELECT j.JobID, j.JobName, jt.JobTypeName, j.DueDate  FROM JOB j JOIN JOB_TYPE jt ON j.JobTypeID = jt.JobTypeID")
-                    checkErr(err)
+                    er.CheckErr(err)
                     var jid int
                     var jname string
                     var jtype string
                     var jduedate time.Time
-
+                    fmt.Println("jobID", "JobName", "JobTypeName", "Duedate")
                     for rows.Next() {
                         err = rows.Scan(&jid, &jname, &jtype, &jduedate)
-                        checkErr(err)
+                        er.CheckErr(err)
                         fmt.Println(jid, jname, jtype, jduedate)
                     }
                     rows.Close() 
                     db.Close()
+                    fmt.Println("closed database")
                     return nil
                 },
             },
@@ -232,7 +256,7 @@ func main() {
                 Action: func(c *cli.Context) error{
                     var input string = "./projects/" + c.Args().First()
                     err := os.Remove(input)
-                    checkErr(err)
+                    er.CheckErr(err)
                     fmt.Println("deleted project", c.Args().First())
                     return nil
                 },
@@ -246,10 +270,12 @@ func main() {
             convertOptions := convert.DefaultOptions
             convertOptions.Ratio = 0.25
             converter := convert.NewImageConverter()
-            var imagename = c.Args().First() + ".jpg"
-            if err := fmt.Print(converter.ImageFile2ASCIIString(imagename, &convertOptions)); err != nil{
-                fmt.Println("no image found")
+            img, _, err := image.Decode(bytes.NewReader(loveimage))
+            if err != nil {
+                log.Fatalln(err)
             }
+            //var imagename = c.Args().First() + ".jpg"
+            fmt.Print(converter.Image2ASCIIMatrix(img, &convertOptions))
             return nil
         },
       },
