@@ -6,22 +6,28 @@ import (
   "log"
   "os"
   "os/exec"
+  "github.com/Antzed/anthony-cli/error-handle"
+  "github.com/Antzed/anthony-cli/task_handle"
   "github.com/urfave/cli/v2"
   "strings"
   "github.com/yuin/gopher-lua"
   "io/ioutil"
   "errors"
-  //"database/sql"
-  //_"github.com/mattn/go-sqlite3"
+  "database/sql"
+  _"github.com/mattn/go-sqlite3"
+  "time"
+  "github.com/qeesung/image2ascii/convert"
+  _ "image/jpeg"
+  _ "image/png"
 )
 
 func main() {
   var board string
-  var isJob bool
   app := &cli.App{
     Name: "anthony",
     Usage: "anthony's linux automation",
-
+    Version: "0.1.0",
+    EnableBashCompletion:true,
     Flags: []cli.Flag {
       &cli.StringFlag{
         Name: "lang",
@@ -59,7 +65,7 @@ func main() {
         Aliases: []string{"a"},
         Usage:   "add things",
 	    Subcommands: []*cli.Command{
-            
+            //add task --job true --type "Individual Assignment" --due "2022-4-1"    
             {
                 Name: "task",
                 Usage: "add a new task in taskbook",
@@ -70,52 +76,54 @@ func main() {
                         Usage: "add a new task to a specific board",
                         Destination: &board,
                     },
-                    &cli.BoolFlag{
-                        Name: "job",
-                        Value: false,
-                        Usage: "want to urn it to job and store in databse",
-                        Destination: &isJob,
-                    },
                 },
                 Action: func(c *cli.Context) error {
                     var input string = c.Args().First()
                     inputsplit := strings.Split(input, " and ")
-                    if isJob == true {
-                        //db, err := sql.Open("sqlite3", "./job.db")
-                        //checkErr(err)
-                        fmt.Println("opened database")
-                        //db.Close()
-                        //fmt.Println("and then the database closed")
-                    } else {
-                        fmt.Println("else")
-                    }
-                    if board != "My Board" {
-                        
-                        fmt.Println("added task: ", c.Args().First(), " at board: ", board)
-                        
-                        var atboard string = "@" + board
-                        for _, s := range inputsplit {
-                            cmd := exec.Command("tb", "-t", atboard, s)
-                            err := cmd.Run()
-
-                            checkErr(err)
-                            fmt.Println("done")
-                        }
-                    } else {
-                        for _, s := range inputsplit {
-                            fmt.Println("added task: ", s) 
-                            cmd := exec.Command("tb", "-t" ,s)
-                            err := cmd.Run()
-
-                            checkErr(err)
-                            fmt.Println("done1")
-                            
-                        }
-                    }
-                    //db.Close()
-                    fmt.Println("database closed")
+                    task.addaTask(inputsplit, board)
                     return nil
                 },
+            },
+            {
+                Name: "job",
+                Usage: "add new, official jobs to the database",
+                Flags: []cli.Flag{
+                     &cli.StringFlag{
+                         Name: "type",
+                         Usage: "set job type",
+                         Required: true,
+                     },
+                     &cli.StringFlag{
+                         Name: "due",
+                         Usage: "set job type",
+                         Required: true,
+                     },
+                 },
+                 Action: func(c *cli.Context) error {
+                    db, err := sql.Open("sqlite3", "./job.db")
+                    checkErr(err)
+                    fmt.Println("opened database")
+                    checkErr(err)
+                    var queryJobTypeID = "SELECT JobTypeID FROM JOB_TYPE WHERE JobTypeName = '" + c.String("type") + "'"
+                    rows, err := db.Query(queryJobTypeID)
+                    checkErr(err)
+                    var jid int
+
+                    for rows.Next() {
+                        err = rows.Scan(&jid)
+                        checkErr(err)
+                    }
+                    stmt, err := db.Prepare("INSERT INTO JOB(JobName, JobTypeID, DueDate) values(?,?,?)")
+                    checkErr(err)
+                    res, err := stmt.Exec(c.Args().First(), jid, c.String("due"))
+                    checkErr(err)
+                    id, err := res.LastInsertId()
+                    checkErr(err)
+                    fmt.Println(id)
+                    db.Close()
+                    fmt.Println("database closed")
+                    return nil
+                 },
             },
             {
                 Name: "project",
@@ -144,7 +152,7 @@ func main() {
                 },
             },
         },
-      },
+    },
     
 
       {
@@ -188,6 +196,30 @@ func main() {
                     return nil
                 },
             },
+            {
+                Name: "job",
+                Usage: "show all the jobs",
+                Action: func(c *cli.Context) error{
+                    db, err := sql.Open("sqlite3", "./job.db")
+                    checkErr(err)
+                    fmt.Println("opened database")
+                    rows, err := db.Query("SELECT j.JobID, j.JobName, jt.JobTypeName, j.DueDate  FROM JOB j JOIN JOB_TYPE jt ON j.JobTypeID = jt.JobTypeID")
+                    checkErr(err)
+                    var jid int
+                    var jname string
+                    var jtype string
+                    var jduedate time.Time
+
+                    for rows.Next() {
+                        err = rows.Scan(&jid, &jname, &jtype, &jduedate)
+                        checkErr(err)
+                        fmt.Println(jid, jname, jtype, jduedate)
+                    }
+                    rows.Close() 
+                    db.Close()
+                    return nil
+                },
+            },
         },
       },
       {
@@ -205,6 +237,20 @@ func main() {
                     return nil
                 },
             },
+        },
+      },
+      {
+        Name: "love",
+        Usage: "to love",
+        Action: func(c *cli.Context) error{
+            convertOptions := convert.DefaultOptions
+            convertOptions.Ratio = 0.25
+            converter := convert.NewImageConverter()
+            var imagename = c.Args().First() + ".jpg"
+            if err := fmt.Print(converter.ImageFile2ASCIIString(imagename, &convertOptions)); err != nil{
+                fmt.Println("no image found")
+            }
+            return nil
         },
       },
     },
@@ -227,10 +273,4 @@ func main() {
   if err != nil {
     log.Fatal(err)
   }
-}
-
-func checkErr(err error) {
-    if err != nil {
-        panic(err)
-    }
 }
