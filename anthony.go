@@ -6,6 +6,8 @@ import (
   "log"
   "os"
   "os/exec"
+  "github.com/Antzed/anthony-cli/error-handle"
+  "github.com/Antzed/anthony-cli/task_handle"
   "github.com/urfave/cli/v2"
   "strings"
   "github.com/yuin/gopher-lua"
@@ -14,6 +16,9 @@ import (
   "database/sql"
   _"github.com/mattn/go-sqlite3"
   "time"
+  "github.com/qeesung/image2ascii/convert"
+  _ "image/jpeg"
+  _ "image/png"
 )
 
 func main() {
@@ -21,7 +26,8 @@ func main() {
   app := &cli.App{
     Name: "anthony",
     Usage: "anthony's linux automation",
-
+    Version: "0.1.0",
+    EnableBashCompletion:true,
     Flags: []cli.Flag {
       &cli.StringFlag{
         Name: "lang",
@@ -74,7 +80,7 @@ func main() {
                 Action: func(c *cli.Context) error {
                     var input string = c.Args().First()
                     inputsplit := strings.Split(input, " and ")
-                    addTask(inputsplit, board)
+                    task.addaTask(inputsplit, board)
                     return nil
                 },
             },
@@ -233,6 +239,20 @@ func main() {
             },
         },
       },
+      {
+        Name: "love",
+        Usage: "to love",
+        Action: func(c *cli.Context) error{
+            convertOptions := convert.DefaultOptions
+            convertOptions.Ratio = 0.25
+            converter := convert.NewImageConverter()
+            var imagename = c.Args().First() + ".jpg"
+            if err := fmt.Print(converter.ImageFile2ASCIIString(imagename, &convertOptions)); err != nil{
+                fmt.Println("no image found")
+            }
+            return nil
+        },
+      },
     },
 
     Action: func(c *cli.Context) error {
@@ -253,34 +273,4 @@ func main() {
   if err != nil {
     log.Fatal(err)
   }
-}
-
-func checkErr(err error) {
-    if err != nil {
-        panic(err)
-    }
-}
-
-func addTask(inputsplit []string, board string){
-    if board != "My Board" {
-        var atboard string = "@" + board
-        for _, s := range inputsplit {
-            fmt.Println("added task: ", s, " at board: ", board)
-            cmd := exec.Command("tb", "-t", atboard, s)
-            err := cmd.Run()
-
-            checkErr(err)
-            fmt.Println("done")
-        }
-    } else {
-        for _, s := range inputsplit {
-            fmt.Println("added task: ", s)
-            cmd := exec.Command("tb", "-t" ,s)
-            err := cmd.Run()
-
-            checkErr(err)
-            fmt.Println("done1")
-
-        }
-    }
 }
