@@ -23,6 +23,10 @@ import (
   _ "image/png"
   "image"
   "bytes"
+  _"github.com/faiface/beep"
+  "github.com/faiface/beep/mp3"
+  "github.com/faiface/beep/speaker"
+  "strconv"
 )
 
 
@@ -85,7 +89,7 @@ func main() {
         Aliases: []string{"a"},
         Usage:   "add things",
 	    Subcommands: []*cli.Command{
-            //add task --job true --type "Individual Assignment" --due "2022-4-1"    
+            //add task --job tr``ue --type "Individual Assignment" --due "2022-4-1"    
             {
                 Name: "task",
                 Usage: "add a new task in taskbook",
@@ -120,26 +124,22 @@ func main() {
                      },
                  },
                  Action: func(c *cli.Context) error {
+                    //open a database instance
                     db, err := sql.Open("sqlite3", "./job.db")
                     er.CheckErr(err)
                     fmt.Println("opened database")
-                    //er.CheckErr(err)
-                    //var queryJobTypeID = "SELECT JobTypeID FROM JOB_TYPE WHERE JobTypeName = '" + c.String("type") + "'"
-                    //rows, err := db.Query(queryJobTypeID)
-                    //er.CheckErr(err)
-                    var jid = db_handle.SelectForeignKey(db, c.String("type"))
+                    
+                    //select foriegn key(return a id)
+                    var fkSelectCondition = "JobTypeName = '"+c.String("type")+"'"
+                    var jtid = db_handle.SelectForeignKey(db, "JobTypeID", "JOB_TYPE", fkSelectCondition)
 
-                    //for rows.Next() {
-                      //  err = rows.Scan(&jid)
-                        //er.CheckErr(err)
-                    //}
-                    stmt, err := db.Prepare("INSERT INTO JOB(JobName, JobTypeID, DueDate) values(?,?,?)")
-                    er.CheckErr(err)
-                    res, err := stmt.Exec(c.Args().First(), jid, c.String("due"))
-                    er.CheckErr(err)
-                    id, err := res.LastInsertId()
-                    er.CheckErr(err)
-                    fmt.Println(id)
+                    //insert a row in table job using the id
+                    insertInstruction := "INSERT INTO JOB(JobName, JobTypeID, DueDate) values('" +c.Args().First() + "', " + strconv.Itoa(jtid) + ", '" + c.String("due") + "')"
+                    fmt.Println(insertInstruction)
+                    db_handle.Insert(db, insertInstruction)
+    
+                    
+                    //close database
                     db.Close()
                     fmt.Println("database closed")
                     return nil
@@ -279,6 +279,33 @@ func main() {
             return nil
         },
       },
+      {
+          Name: "poopshart",
+          Usage: "poopshart",
+          Action: func(c *cli.Context) error{
+             convertOptions := convert.DefaultOptions
+             convertOptions.Ratio = 0.25
+             converter := convert.NewImageConverter()
+             //img, _, err := image.Decode(bytes.NewReader(loveimage))
+             //if err != nil {
+               //  log.Fatalln(err)
+             //}
+             fmt.Print(converter.ImageFile2ASCIIString("poopshart.png", &convertOptions))
+             f, err := os.Open("20 second raunchy fart (slowed + reverb)-AEIqCtImdsI.mp3")
+	         if err != nil {
+                 log.Fatal(err)
+             }
+             streamer, format, err := mp3.Decode(f)
+	        if err != nil {
+		        log.Fatal(err)
+	        }
+            defer streamer.Close()
+            speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+            speaker.Play(streamer)
+            select {}
+            return nil
+          },
+      },
     },
 
     Action: func(c *cli.Context) error {
@@ -291,6 +318,7 @@ func main() {
         } else {
             fmt.Println("Hello", name)
         }
+        //db_handle.Insert("INSERT INTO JOB(JobName, JobTypeID, DueDate)            values(jobname,jobetype,duedate)")
             return nil
     },
 
