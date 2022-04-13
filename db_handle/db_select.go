@@ -20,3 +20,5 @@ func SelectForeignKey(db *sql.DB, idName string, tbName string, condition string
     }
     return id
 }
+
+

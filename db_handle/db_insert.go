@@ -5,7 +5,7 @@ import (
     "database/sql"
     _"github.com/mattn/go-sqlite3"
     er "github.com/Antzed/anthony-cli/error_handle"
-    "strings"
+    //"strings"
     //"regexp"
     //"time"
 )

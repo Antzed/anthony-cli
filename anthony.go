@@ -15,7 +15,6 @@ import (
   "github.com/yuin/gopher-lua"
   "io/ioutil"
   "errors"
-  "database/sql"
   _"github.com/mattn/go-sqlite3"
   "time"
   "github.com/qeesung/image2ascii/convert"
@@ -125,10 +124,7 @@ func main() {
                  },
                  Action: func(c *cli.Context) error {
                     //open a database instance
-                    db, err := sql.Open("sqlite3", "./job.db")
-                    er.CheckErr(err)
-                    fmt.Println("opened database")
-                    
+                    db := db_handle.OpenDB("job", "./")                   
                     //select foriegn key(return a id)
                     var fkSelectCondition = "JobTypeName = '"+c.String("type")+"'"
                     var jtid = db_handle.SelectForeignKey(db, "JobTypeID", "JOB_TYPE", fkSelectCondition)
@@ -140,8 +136,7 @@ func main() {
     
                     
                     //close database
-                    db.Close()
-                    fmt.Println("database closed")
+                    db_handle.CloseDB(db)
                     return nil
                  },
             },
@@ -223,11 +218,11 @@ func main() {
                 Name: "job",
                 Usage: "show all the jobs",
                 Action: func(c *cli.Context) error{
-                    db, err := sql.Open("sqlite3", "./job.db")
-                    er.CheckErr(err)
-                    fmt.Println("opened database")
+                    db := db_handle.OpenDB("job", "./")
+
                     rows, err := db.Query("SELECT j.JobID, j.JobName, jt.JobTypeName, j.DueDate  FROM JOB j JOIN JOB_TYPE jt ON j.JobTypeID = jt.JobTypeID")
                     er.CheckErr(err)
+                    fmt.Println("rows: ",strconv.Itoa(rows))
                     var jid int
                     var jname string
                     var jtype string
@@ -239,8 +234,7 @@ func main() {
                         fmt.Println(jid, jname, jtype, jduedate)
                     }
                     rows.Close() 
-                    db.Close()
-                    fmt.Println("closed database")
+                    db_handle.CloseDB(db)
                     return nil
                 },
             },
