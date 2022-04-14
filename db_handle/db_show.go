@@ -3,6 +3,7 @@ package db_handle
 import (
     "fmt"
     "database/sql"
+    "time"
 
     er "github.com/Antzed/anthony-cli/error_handle"
 )
@@ -10,7 +11,7 @@ import (
 func ShowJob(db *sql.DB){
     rows, err := db.Query("SELECT j.JobID, j.JobName, jt.JobTypeName,  j.DueDate  FROM JOB j JOIN JOB_TYPE jt ON j.JobTypeID = jt.JobTypeID")
     er.CheckErr(err)
-    fmt.Println("rows: ",strconv.Itoa(rows))
+    //fmt.Println("rows: ",strconv.Itoa(rows))
     var jid int
     var jname string
     var jtype string
@@ -23,3 +24,4 @@ func ShowJob(db *sql.DB){
     }
     rows.Close()
 }
+

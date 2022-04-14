@@ -10,9 +10,9 @@ import (
   er "github.com/Antzed/anthony-cli/error_handle"
   th "github.com/Antzed/anthony-cli/task_handle"
   "github.com/Antzed/anthony-cli/db_handle"
+  "github.com/Antzed/anthony-cli/lua_handle"
   "github.com/urfave/cli/v2"
   "strings"
-  "github.com/yuin/gopher-lua"
   "io/ioutil"
   "errors"
   _"github.com/mattn/go-sqlite3"
@@ -35,11 +35,15 @@ var loveimage []byte
 
 var luaScript = `
  function addProject(name)
-   os.execute("python3 ./GanTTY/main.py ./projects" .. name)
+   os.execute("python3 ./GanTTY/main.py ./projects/" .. name)
  end
 
  function showTask()
      os.execute("tb")
+ end
+
+ function fishTank()
+    os.execute("cursetank")
  end
 `
 
@@ -152,20 +156,10 @@ func main() {
 		                }
 	                }
                     var input string = c.Args().First()
-                    L := lua.NewState()
-                    defer L.Close()
+                    L := lua_handle.InitScriptString(luaScript)
+                    defer L.Close()                    
 
-                    if err := L.DoString(luaScript); err != nil{
-                        panic(err)
-                    }
-
-                    if err := L.CallByParam(lua.P{
-		                Fn:      L.GetGlobal("addProject"), // name of Lua function
-		                NRet:    0,                     // number of returned values
-		                Protect: true,                  // return err or panic
-	                },  lua.LString(input)); err != nil {
-		                panic(err)
-	                }
+                    lua_handle.CallOneStrParamFunc(L, "addProject", 0, input)
                     return nil
                 },
             },
@@ -197,20 +191,9 @@ func main() {
                 Name: "task",
                 Usage: "list all task",
                 Action: func(c *cli.Context) error{
-                    L := lua.NewState()
+                    L := lua_handle.InitScriptString(luaScript)
                     defer L.Close()
-                    err := L.DoString(luaScript)
-                    er.CheckErr(err)
-                    //err != nil{
-                        //panic(err)
-                    //}
-                    if err := L.CallByParam(lua.P{
-                        Fn:      L.GetGlobal("showTask"), // name of Lua function
-                        NRet:    0,                     // number of returned values
-                        Protect: true,                  // return err or panic
-                    }); err != nil {
-                        panic(err)
-                    }
+                    lua_handle.CallNoParamFunc(L, "showTask", 0)
                     return nil
                 },
             },
@@ -219,21 +202,7 @@ func main() {
                 Usage: "show all the jobs",
                 Action: func(c *cli.Context) error{
                     db := db_handle.OpenDB("job", "./")
-
-                    rows, err := db.Query("SELECT j.JobID, j.JobName, jt.JobTypeName, j.DueDate  FROM JOB j JOIN JOB_TYPE jt ON j.JobTypeID = jt.JobTypeID")
-                    er.CheckErr(err)
-                    fmt.Println("rows: ",strconv.Itoa(rows))
-                    var jid int
-                    var jname string
-                    var jtype string
-                    var jduedate time.Time
-                    fmt.Println("jobID", "JobName", "JobTypeName", "Duedate")
-                    for rows.Next() {
-                        err = rows.Scan(&jid, &jname, &jtype, &jduedate)
-                        er.CheckErr(err)
-                        fmt.Println(jid, jname, jtype, jduedate)
-                    }
-                    rows.Close() 
+                    db_handle.ShowJob(db)  
                     db_handle.CloseDB(db)
                     return nil
                 },
@@ -311,9 +280,8 @@ func main() {
             fmt.Println("Hola", name)
         } else {
             fmt.Println("Hello", name)
-        }
-        //db_handle.Insert("INSERT INTO JOB(JobName, JobTypeID, DueDate)            values(jobname,jobetype,duedate)")
-            return nil
+        } 
+        return nil
     },
 
   }
