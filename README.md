@@ -11,12 +11,22 @@ to be built on-
 tibivi - github.com/strang1ato/tibivi
 sqlite3
 
-
+todo:
 job-allocator  - give me jobs
 garbage collection - help me clean up space
     - clear - clear directory, take everything and put it in one folder
 
+
+## Commands
 add
 - tasks
 - projects
+- job
+
+show
+- task
+- project
+- job
+
+
 

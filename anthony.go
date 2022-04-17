@@ -200,10 +200,23 @@ func main() {
             {
                 Name: "job",
                 Usage: "show all the jobs",
+                Flags: []cli.Flag{
+                      &cli.StringFlag{
+                          Name: "due",
+                          Usage: "set job type",
+                          Value: "null",
+                      },
+                },
                 Action: func(c *cli.Context) error{
                     db := db_handle.OpenDB("job", "./")
-                    db_handle.ShowJob(db)  
+                    if c.String("due") == "null" {
+                        db_handle.ShowJob(db)
+                    } else{
+                        db_handle.ShowJobByDueday(db, c.String("due"))
+                    }
                     db_handle.CloseDB(db)
+
+                    db_handle.ExportJob()
                     return nil
                 },
             },

@@ -25,3 +25,18 @@ func ShowJob(db *sql.DB){
     rows.Close()
 }
 
+func ShowJobByDueday(db *sql.DB, dueDay string){
+     var instruction = "SELECT j.JobID, j.JobName, jt.JobTypeName,  j.DueDate           FROM JOB j JOIN JOB_TYPE jt ON j.JobTypeID = jt.JobTypeID WHERE j.DueDate = '" +       dueDay + "'"
+     rows, err := db.Query(instruction)
+     var jid int
+     var jname string
+     var jtype string
+     var jduedate time.Time
+     fmt.Println("jobID", "JobName", "JobTypeName", "Duedate")
+     for rows.Next() {
+         err = rows.Scan(&jid, &jname, &jtype, &jduedate)
+         er.CheckErr(err)
+         fmt.Println(jid, jname, jtype, jduedate)
+     }
+     rows.Close()
+ }
