@@ -92,7 +92,7 @@ func main() {
         Aliases: []string{"a"},
         Usage:   "add things",
 	    Subcommands: []*cli.Command{
-            //add task --job tr``ue --type "Individual Assignment" --due "2022-4-1"    
+            //add task --job true --added this weeks job    
             {
                 Name: "task",
                 Usage: "add a new task in taskbook",
@@ -103,11 +103,25 @@ func main() {
                         Usage: "add a new task to a specific board",
                         Destination: &board,
                     },
+                    &cli.BoolFlag{
+                        Name: "job",
+                        Value: false,
+                        Usage: "confirm whether add task from job",
+                    },
+
                 },
                 Action: func(c *cli.Context) error {
                     var input string = c.Args().First()
                     inputsplit := strings.Split(input, " and ")
                     th.AddTask(inputsplit, board)
+
+                    //if --job true
+                    //iif c.Bool("job") == true {
+                      //  db := db_handle.OpenDB("job", "./")
+                        //db_handle.ExportJobFromWeek()
+                    //}
+
+
                     return nil
                 },
             },
@@ -214,9 +228,13 @@ func main() {
                     } else{
                         db_handle.ShowJobByDueday(db, c.String("due"))
                     }
+                    
+                    
+                    //if c.Bool("job") == true {
+                      //   db := db_handle.OpenDB("job", "./")
+                         db_handle.ExportJobFromWeek()
+                    //}
                     db_handle.CloseDB(db)
-
-                    db_handle.ExportJob()
                     return nil
                 },
             },
