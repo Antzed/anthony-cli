@@ -1,4 +1,4 @@
-# Anthony Cli
+# Anthony Cli(in development)
 ---
 This cli aim to help me with my life
 

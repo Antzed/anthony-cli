@@ -6,14 +6,15 @@ import (
   "log"
   "os"
   "os/exec"
+  "io/ioutil"
   _"embed"
   er "github.com/Antzed/anthony-cli/error_handle"
   th "github.com/Antzed/anthony-cli/task_handle"
   "github.com/Antzed/anthony-cli/db_handle"
   "github.com/Antzed/anthony-cli/lua_handle"
+  "github.com/Antzed/anthony-cli/file_handle"
   "github.com/urfave/cli/v2"
   "strings"
-  "io/ioutil"
   "errors"
   _"github.com/mattn/go-sqlite3"
   "time"
@@ -111,15 +112,29 @@ func main() {
 
                 },
                 Action: func(c *cli.Context) error {
-                    var input string = c.Args().First()
-                    inputsplit := strings.Split(input, " and ")
-                    th.AddTask(inputsplit, board)
 
                     //if --job true
-                    //iif c.Bool("job") == true {
-                      //  db := db_handle.OpenDB("job", "./")
-                        //db_handle.ExportJobFromWeek()
-                    //}
+                    if c.Bool("job") == true {
+                        db := db_handle.OpenDB("job", "./")
+                        db_handle.ExportJobFromWeek()
+                        db.Close()
+                        fmt.Println("db closed")
+
+                        file := file_handle.OpenFile("./job.txt")
+                        defer file.Close()
+
+                        var jobs []string
+                        jobs = file_handle.ScansToList(file, jobs)
+                        fmt.Println(jobs)
+                        
+                        
+                        th.AddTask(jobs, board)
+
+                    } else {
+                        var input string = c.Args().First()
+                        inputsplit := strings.Split(input, " and ")
+                        th.AddTask(inputsplit, board)
+                    }
 
 
                     return nil

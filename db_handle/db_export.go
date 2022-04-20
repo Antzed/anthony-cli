@@ -34,7 +34,9 @@ func ExportJobFromWeek(){
      L := lua_handle.InitScriptString(lua_handle.LuaScript)
      defer L.Close()
      currentTime := time.Now()
+     //currentDate := curerntTime.Date()
      aWeekFromNow := currentTime.AddDate(0,0,7)
+     //aWeekFromNowDate := aWeekFromNow.Date()
      fmt.Println(currentTime, aWeekFromNow)
      var timeRange string =  "'" + currentTime.Format("2006-01-02") + "'" + " AND " + "'" + aWeekFromNow.Format("2006-01-02") + "'"
      fmt.Println(timeRange)
