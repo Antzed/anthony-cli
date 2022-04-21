@@ -4,13 +4,18 @@ import (
     "bufio"
     "fmt"
     "os"
+    "strings"
      er "github.com/Antzed/anthony-cli/error_handle"
 )
 
 func ScansToList(file *os.File, jobs []string) []string {
     scanner := bufio.NewScanner(file)
     for scanner.Scan() {
-        jobs = append(jobs, scanner.Text())
+        temp := scanner.Text()
+        temp = strings.Replace(temp, "|", " is a ", 1)
+        temp = strings.Replace(temp, "|", " and is due ", 1)
+        fmt.Println("temp is ", temp)
+        jobs = append(jobs, temp)
     }
     fmt.Println(jobs)
     fmt.Println("scanner done")

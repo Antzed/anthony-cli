@@ -7,12 +7,14 @@ import (
     "time"
     er "github.com/Antzed/anthony-cli/error_handle"
     "github.com/Antzed/anthony-cli/lua_handle"
+    "github.com/Antzed/anthony-cli/path_handle"
 
 )
-
+var projectPath = path_handle.RootDir()
+var jobtxtPath = projectPath + "/job.txt"
 func ExportJob(){
-    if _, err := os.Stat("./job.txt"); err == nil {
-        e := os.Remove("job.txt")
+    if _, err := os.Stat(jobtxtPath); err == nil {
+        e := os.Remove(jobtxtPath)
         er.CheckErr(e)
     }
 
@@ -26,8 +28,8 @@ func ExportJob(){
 }
 
 func ExportJobFromWeek(due string){
-    if _, err := os.Stat("./job.txt"); err == nil {
-         e := os.Remove("job.txt")
+    if _, err := os.Stat(jobtxtPath); err == nil {
+         e := os.Remove(jobtxtPath)
          er.CheckErr(e)
      }
 

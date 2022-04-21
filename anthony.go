@@ -13,6 +13,7 @@ import (
   "github.com/Antzed/anthony-cli/db_handle"
   "github.com/Antzed/anthony-cli/lua_handle"
   "github.com/Antzed/anthony-cli/file_handle"
+  "github.com/Antzed/anthony-cli/path_handle"
   "github.com/urfave/cli/v2"
   "strings"
   "errors"
@@ -34,27 +35,30 @@ import (
 var loveimage []byte
 
 
-var luaScript = `
- function addProject(name)
-   os.execute("python3 ./GanTTY/main.py ./projects/" .. name)
- end
 
- function showTask()
-     os.execute("tb")
- end
+//var luaScript = `
+ //function addProject(name)
+  // os.execute("python3 ./GanTTY/main.py ./projects/" .. name)
+ //end
 
- function fishTank()
-    os.execute("cursetank")
- end
-`
+ //function showTask()
+   //  os.execute("tb")
+ //end
+
+ //function fishTank()
+   // os.execute("cursetank")
+ //end
+//`
+
 
 
 func main() {
   var board string
+  projectPath  := path_handle.RootDir() + "/"
   app := &cli.App{
     Name: "anthony",
     Usage: "anthony's linux automation",
-    Version: "0.1.0",
+    Version: "0.2.0",
     EnableBashCompletion:true,
     Flags: []cli.Flag {
       &cli.StringFlag{
@@ -119,13 +123,13 @@ func main() {
                     //fmt.Println(c.String("due"))
                     //if --job true
                     if c.Bool("job") == true {
-                        db := db_handle.OpenDB("job", "./")
+                        db := db_handle.OpenDB("job", projectPath)
                         db_handle.ExportJobFromWeek(c.String("due"))
                         db.Close()
                         fmt.Println("db closed")
 
-
-                        file := file_handle.OpenFile("./job.txt")
+                        jobtxtPath := projectPath + "job.txt"
+                        file := file_handle.OpenFile(jobtxtPath)
                         defer file.Close()
 
                         var jobs []string
@@ -162,7 +166,7 @@ func main() {
                  },
                  Action: func(c *cli.Context) error {
                     //open a database instance
-                    db := db_handle.OpenDB("job", "./")                   
+                    db := db_handle.OpenDB("job", projectPath)                   
                     //select foriegn key(return a id)
                     var fkSelectCondition = "JobTypeName = '"+c.String("type")+"'"
                     var jtid = db_handle.SelectForeignKey(db, "JobTypeID", "JOB_TYPE", fkSelectCondition)
@@ -190,7 +194,7 @@ func main() {
 		                }
 	                }
                     var input string = c.Args().First()
-                    L := lua_handle.InitScriptString(luaScript)
+                    L := lua_handle.InitScriptString(lua_handle.LuaScript)
                     defer L.Close()                    
 
                     lua_handle.CallOneStrParamFunc(L, "addProject", 0, input)
@@ -210,7 +214,8 @@ func main() {
                 Name: "project",
                 Usage: "list all the projects",
                 Action: func(c *cli.Context) error {
-                    files, err := ioutil.ReadDir("projects")
+                    path:= projectPath + "projects"
+                    files, err := ioutil.ReadDir(path)
                     if err != nil {
                         log.Fatal(err)
                     }
@@ -225,7 +230,7 @@ func main() {
                 Name: "task",
                 Usage: "list all task",
                 Action: func(c *cli.Context) error{
-                    L := lua_handle.InitScriptString(luaScript)
+                    L := lua_handle.InitScriptString(lua_handle.LuaScript)
                     defer L.Close()
                     lua_handle.CallNoParamFunc(L, "showTask", 0)
                     return nil
@@ -242,7 +247,7 @@ func main() {
                       },
                 },
                 Action: func(c *cli.Context) error{
-                    db := db_handle.OpenDB("job", "./")
+                    db := db_handle.OpenDB("job", projectPath)
                     if c.String("due") == "null" {
                         db_handle.ShowJob(db)
                     } else{
@@ -252,7 +257,7 @@ func main() {
                     
                     //if c.Bool("job") == true {
                       //   db := db_handle.OpenDB("job", "./")
-                         db_handle.ExportJobFromWeek("null")
+                         //db_handle.ExportJobFromWeek("null")
                     //}
                     db_handle.CloseDB(db)
                     return nil
@@ -323,6 +328,7 @@ func main() {
     },
 
     Action: func(c *cli.Context) error {
+
         name := "Anthony"
         if c.NArg() > 0 {
             name = c.Args().Get(0)
@@ -331,6 +337,7 @@ func main() {
             fmt.Println("Hola", name)
         } else {
             fmt.Println("Hello", name)
+            fmt.Println("projectPath is", projectPath)
         } 
         return nil
     },
