@@ -106,19 +106,24 @@ func main() {
                     },
                     &cli.BoolFlag{
                         Name: "job",
-                        Value: false,
                         Usage: "confirm whether add task from job",
                     },
-
+                    &cli.StringFlag{
+                          Name: "due",
+                          Value: "null",
+                          Usage: "specify date of the job before pulling",
+                    },
                 },
                 Action: func(c *cli.Context) error {
-
+                    
+                    //fmt.Println(c.String("due"))
                     //if --job true
                     if c.Bool("job") == true {
                         db := db_handle.OpenDB("job", "./")
-                        db_handle.ExportJobFromWeek()
+                        db_handle.ExportJobFromWeek(c.String("due"))
                         db.Close()
                         fmt.Println("db closed")
+
 
                         file := file_handle.OpenFile("./job.txt")
                         defer file.Close()
@@ -247,7 +252,7 @@ func main() {
                     
                     //if c.Bool("job") == true {
                       //   db := db_handle.OpenDB("job", "./")
-                         db_handle.ExportJobFromWeek()
+                         db_handle.ExportJobFromWeek("null")
                     //}
                     db_handle.CloseDB(db)
                     return nil

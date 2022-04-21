@@ -20,7 +20,7 @@ var LuaScript = `
   end
 
   function exportJobThisWeek(timerange)
-    instruction = "SELECT j.JobID, j.JobName, jt.JobTypeName,   j.DueDate   FROM JOB j JOIN JOB_TYPE jt ON j.JobTypeID = jt.JobTypeID WHERE DueDate BETWEEN ".. timerange ..";"
+    instruction = "SELECT j.JobName, jt.JobTypeName,   j.DueDate   FROM JOB j JOIN JOB_TYPE jt ON j.JobTypeID = jt.JobTypeID WHERE DueDate BETWEEN ".. timerange ..";"
     os.execute("sqlite3 job.db \".mode list\" \"".. instruction .. "\" > job.txt")
 
   end

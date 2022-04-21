@@ -18,3 +18,4 @@ func ScansToList(file *os.File, jobs []string) []string {
     er.CheckErr(err2)
     return jobs
 }
+
