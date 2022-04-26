@@ -280,6 +280,66 @@ func main() {
                     return nil
                 },
             },
+            {
+                Name: "job",
+                Usage: "delete existing jobs",
+                Flags: []cli.Flag{
+                    &cli.StringFlag{
+                        Name: "name",
+                        Usage: "specify job names",
+                        Required: true,
+                    },
+                    &cli.StringFlag{
+                        Name: "due",
+                        Usage: "specify job due date",
+                        Required: true,
+                    },
+                 },
+                Action: func(c *cli.Context) error{
+                    db := db_handle.OpenDB("job", projectPath)
+                    db_handle.DeleteJob(db, c.String("name"), c.String("due"))
+                    fmt.Println("deleted line")
+                    db.Close()
+                    fmt.Println("cloased database")
+                    return nil
+                },
+
+            },
+        },
+      },
+      {
+        Name: "update",
+        Usage: "update values",
+        Subcommands: []*cli.Command{
+            {
+                Name: "job",
+                Usage: "update job's column",
+                Flags: []cli.Flag{
+                    &cli.IntFlag{
+                        Name: "target",
+                        Usage: "specify target row id",
+                        Required: true,
+                    },
+                    &cli.StringFlag{
+                        Name: "column",
+                        Usage: "specifiy target column",
+                        Required: true,
+                    },
+                    &cli.StringFlag{
+                        Name: "to",
+                        Usage: "specify the value that is going to be changed to",
+                        Required: true,
+                    },
+                },
+                Action: func(c *cli.Context) error{
+                    db := db_handle.OpenDB("job", projectPath)
+                    db_handle.UpdateJobColumn(db, c.Int("target"), c.String("column"), c.String("to"))
+                    db.Close()
+                    fmt.Println("database closed")
+                    return nil
+                },
+
+            },
         },
       },
       {
