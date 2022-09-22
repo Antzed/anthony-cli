@@ -26,7 +26,7 @@ func InsertJob(db *sql.DB, jobName string, jtid int, dueDate string){
 func Insert(db *sql.DB, instruction string) {
 
     res, err := db.Exec(instruction)
-    er.CheckErr(err)
+    er.CheckErr(err.(DBInvalidInstructionError))
     id, err := res.LastInsertId()
     er.CheckErr(err)
     fmt.Println(id)

@@ -172,7 +172,7 @@ func main() {
                     var jtid = db_handle.SelectForeignKey(db, "JobTypeID", "JOB_TYPE", fkSelectCondition)
 
                     //insert a row in table job using the id
-                    insertInstruction := "INSERT INTO JOB(JobName, JobTypeID, DueDate) values('" +c.Args().First() + "', " + strconv.Itoa(jtid) + ", '" + c.String("due") + "')"
+                    insertInstruction := "INSERTINTO JOB(JobName, JobTypeID, DueDate) values('" +c.Args().First() + "', " + strconv.Itoa(jtid) + ", '" + c.String("due") + "')"
                     fmt.Println(insertInstruction)
                     db_handle.Insert(db, insertInstruction)
     
